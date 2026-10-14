@@ -114,6 +114,16 @@ export const App: React.FC = () => {
     }
   }, [blackjackState, profile.id, profile.chips, handleChipsSync]);
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const roomParam = params.get('room');
+      if (roomParam) {
+        joinRoom(roomParam.toUpperCase());
+      }
+    }
+  }, [joinRoom]);
+
   const handleStartSinglePlayer = (gameType: GameType) => {
     createRoom(gameType, undefined, undefined, true);
   };

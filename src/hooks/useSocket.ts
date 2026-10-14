@@ -5,6 +5,7 @@ import { PokerGameState, PokerActionType } from '../types/poker';
 import { BlackjackGameState, BlackjackActionType } from '../types/blackjack';
 import { StoredProfile } from '../utils/playerStorage';
 import { LocalGameController } from '../utils/localGameController';
+import { fetchPublicRooms } from '../utils/roomRegistry';
 
 export interface RoomState {
   id: string;
@@ -282,7 +283,23 @@ export function useSocket(profile: StoredProfile, onChipsUpdate: (chips: number)
     if (socketRef.current && socketRef.current.connected) {
       socketRef.current.emit('get_rooms');
     }
+    fetchPublicRooms().then((publicRooms) => {
+      if (publicRooms.length > 0) {
+        setRooms((prev) => {
+          const map = new Map<string, RoomSummary>();
+          prev.forEach((r) => map.set(r.id, r));
+          publicRooms.forEach((r) => map.set(r.id, r));
+          return Array.from(map.values());
+        });
+      }
+    });
   }, []);
+
+  useEffect(() => {
+    refreshRooms();
+    const interval = setInterval(refreshRooms, 8000);
+    return () => clearInterval(interval);
+  }, [refreshRooms]);
 
   return {
     isConnected,

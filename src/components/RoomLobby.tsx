@@ -31,12 +31,20 @@ export const RoomLobby: React.FC<RoomLobbyProps> = ({
   onLeaveRoom,
 }) => {
   const [copied, setCopied] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
   const localPlayer = players.find((p) => p.id === localPlayerId);
 
   const handleCopyCode = () => {
     navigator.clipboard.writeText(roomId);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleCopyLink = () => {
+    const url = `${window.location.origin}/?room=${roomId}`;
+    navigator.clipboard.writeText(url);
+    setLinkCopied(true);
+    setTimeout(() => setLinkCopied(false), 2000);
   };
 
   const handleToggleReady = () => {
@@ -68,6 +76,13 @@ export const RoomLobby: React.FC<RoomLobbyProps> = ({
           >
             {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
             <span>{roomId}</span>
+          </button>
+          <button
+            onClick={handleCopyLink}
+            className="flex items-center gap-1.5 px-3 py-1 bg-zinc-800 border border-zinc-700 rounded-lg text-zinc-300 font-mono text-xs hover:bg-zinc-700 transition-all shadow-sm"
+          >
+            {linkCopied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+            <span>Copy Link</span>
           </button>
         </div>
       </div>

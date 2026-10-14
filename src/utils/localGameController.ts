@@ -1,10 +1,11 @@
 import { PokerEngine } from '../../server/poker/pokerEngine';
 import { BlackjackEngine } from '../../server/blackjack/blackjackEngine';
 import { decideBotAction } from '../../server/poker/pokerBot';
-import { GameType, BasePlayer } from '../types/common';
+import { GameType, BasePlayer, RoomSummary } from '../types/common';
 import { PokerGameState, PokerPlayer, PokerActionType } from '../types/poker';
 import { BlackjackGameState, BlackjackPlayer, BlackjackActionType } from '../types/blackjack';
 import { RoomState } from '../hooks/useSocket';
+import { announceRoom } from './roomRegistry';
 import { Peer, DataConnection } from 'peerjs';
 
 export interface LocalGameCallbacks {
@@ -14,11 +15,23 @@ export interface LocalGameCallbacks {
   onError: (msg: string) => void;
 }
 
+const PEER_CONFIG = {
+  config: {
+    iceServers: [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:stun1.l.google.com:19302' },
+      { urls: 'stun:stun2.l.google.com:19302' },
+      { urls: 'stun:global.stun.twilio.com:3478' },
+    ],
+  },
+};
+
 export class LocalGameController {
   private pokerEngine: PokerEngine | null = null;
   private blackjackEngine: BlackjackEngine | null = null;
   private roomState: RoomState | null = null;
   private botTimer: ReturnType<typeof setTimeout> | null = null;
+  private announceTimer: ReturnType<typeof setInterval> | null = null;
   private callbacks: LocalGameCallbacks;
   private peer: Peer | null = null;
   private peerConnections: Map<string, DataConnection> = new Map();
@@ -89,7 +102,7 @@ export class LocalGameController {
         id: 'SOLO-POKER',
         name: 'Texas Hold’em Solo Arena',
         gameType: 'poker',
-        maxPlayers: 4,
+        maxPlayers: 6,
         hostId: localPlayer.id,
         isSinglePlayer: true,
         players: players.map((p) => ({
@@ -175,11 +188,14 @@ export class LocalGameController {
     }
 
     const defaultMax = gameType === 'poker' ? 6 : 5;
+    const roomName = name || `${hostPlayer.name}'s Table`;
+    const capacity = maxPlayers || defaultMax;
+
     this.roomState = {
       id: code,
-      name: name || `${hostPlayer.name}'s Table`,
+      name: roomName,
       gameType,
-      maxPlayers: maxPlayers || defaultMax,
+      maxPlayers: capacity,
       hostId: hostPlayer.id,
       isSinglePlayer: false,
       players: [
@@ -198,8 +214,29 @@ export class LocalGameController {
 
     this.callbacks.onRoomState(this.roomState);
 
+    const roomSummary: RoomSummary = {
+      id: code,
+      name: roomName,
+      gameType,
+      playerCount: 1,
+      maxPlayers: capacity,
+      inGame: false,
+      hostName: hostPlayer.name,
+    };
+
+    announceRoom(roomSummary);
+    this.announceTimer = setInterval(() => {
+      if (this.roomState) {
+        announceRoom({
+          ...roomSummary,
+          playerCount: this.roomState.players.length,
+          inGame: Boolean(this.pokerEngine || this.blackjackEngine),
+        });
+      }
+    }, 25000);
+
     const peerId = `mham-casino-${code.toLowerCase()}`;
-    const p = new Peer(peerId);
+    const p = new Peer(peerId, PEER_CONFIG);
     this.peer = p;
 
     p.on('connection', (conn) => {
@@ -213,7 +250,7 @@ export class LocalGameController {
     });
 
     p.on('error', (err) => {
-      this.callbacks.onError(`P2P Network: ${err.message}`);
+      this.callbacks.onError(`P2P Connection: ${err.message}`);
     });
   }
 
@@ -226,11 +263,11 @@ export class LocalGameController {
     this.myPlayerId = player.id;
 
     const hostPeerId = `mham-casino-${roomCode.trim().toLowerCase()}`;
-    const p = new Peer();
+    const p = new Peer(PEER_CONFIG);
     this.peer = p;
 
     p.on('open', () => {
-      const conn = p.connect(hostPeerId);
+      const conn = p.connect(hostPeerId, { reliable: true });
       this.hostConnection = conn;
 
       conn.on('open', () => {
@@ -256,7 +293,7 @@ export class LocalGameController {
     });
 
     p.on('error', () => {
-      this.callbacks.onError('Could not find room with this code.');
+      this.callbacks.onError(`Could not join room ${roomCode}. Check room code.`);
     });
   }
 
@@ -366,9 +403,15 @@ export class LocalGameController {
   }
 
   public addBot(): void {
-    if (!this.roomState || !this.isP2PHost) return;
+    if (!this.roomState) return;
+    if (!this.isP2PHost && !this.roomState.isSinglePlayer) return;
+
+    if (this.roomState.players.length >= this.roomState.maxPlayers) {
+      this.roomState.maxPlayers += 1;
+    }
+
     const botCount = this.roomState.players.filter((p) => p.isBot).length;
-    const botNames = ['Titan', 'Nexus', 'Shadow', 'Phoenix'];
+    const botNames = ['Titan', 'Nexus', 'Shadow', 'Phoenix', 'Oracle', 'Viper', 'Blaze'];
     const botName = botNames[botCount % botNames.length];
     const newBot: BasePlayer = {
       id: `bot-${Date.now()}-${botCount + 1}`,
@@ -383,17 +426,29 @@ export class LocalGameController {
     this.roomState.players.push(newBot);
 
     if (this.pokerEngine) {
-      const pokerPlayers: PokerPlayer[] = this.roomState.players.map((p, idx) => ({
-        ...p,
-        pocketCards: [],
-        bet: 0,
-        totalBetInHand: 0,
-        folded: false,
-        isAllIn: false,
-        seatIndex: idx,
-        hasActed: false,
-      }));
+      const existingPlayers = this.pokerEngine.state.players;
+      const existingMap = new Map(existingPlayers.map((pl) => [pl.id, pl]));
+
+      const pokerPlayers: PokerPlayer[] = this.roomState.players.map((p, idx) => {
+        const ex = existingMap.get(p.id);
+        return {
+          ...p,
+          pocketCards: ex?.pocketCards || [],
+          bet: ex?.bet || 0,
+          totalBetInHand: ex?.totalBetInHand || 0,
+          folded: ex?.folded ?? false,
+          isAllIn: ex?.isAllIn ?? false,
+          seatIndex: idx,
+          hasActed: ex?.hasActed ?? false,
+          handRankDescription: ex?.handRankDescription,
+          wonAmount: ex?.wonAmount || 0,
+        };
+      });
+
       this.pokerEngine.setPlayers(pokerPlayers);
+      this.emitFilteredPokerState(this.pokerEngine.getState());
+      this.broadcastP2PPokerState(this.pokerEngine.getState());
+      this.checkLocalBotAction();
     }
 
     this.broadcastP2PRoomState();
@@ -594,7 +649,14 @@ export class LocalGameController {
   }
 
   public cleanup(): void {
-    if (this.botTimer) clearTimeout(this.botTimer);
+    if (this.announceTimer) {
+      clearInterval(this.announceTimer);
+      this.announceTimer = null;
+    }
+    if (this.botTimer) {
+      clearTimeout(this.botTimer);
+      this.botTimer = null;
+    }
     if (this.peer) {
       this.peer.destroy();
       this.peer = null;
