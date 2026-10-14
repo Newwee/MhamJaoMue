@@ -42,11 +42,15 @@ export function calculatePots(players: PlayerPotInfo[]): CalculatedPotsResult {
     const sortedActiveBets = [...activePlayers].map((p) => p.totalBetInHand).sort((a, b) => b - a);
     if (sortedActiveBets[0] > sortedActiveBets[1]) {
       const highestPlayer = activePlayers.find((p) => p.totalBetInHand === sortedActiveBets[0])!;
-      const refund = sortedActiveBets[0] - sortedActiveBets[1];
-      uncalledRefunds[highestPlayer.id] = refund;
-      const playerIdx = contributions.findIndex((c) => c.id === highestPlayer.id);
-      if (playerIdx >= 0) {
-        contributions[playerIdx].amount -= refund;
+      const otherActive = activePlayers.filter((p) => p.id !== highestPlayer.id);
+      const allOthersAllIn = otherActive.length > 0 && otherActive.every((p) => p.isAllIn);
+      if (allOthersAllIn) {
+        const refund = sortedActiveBets[0] - sortedActiveBets[1];
+        uncalledRefunds[highestPlayer.id] = refund;
+        const playerIdx = contributions.findIndex((c) => c.id === highestPlayer.id);
+        if (playerIdx >= 0) {
+          contributions[playerIdx].amount -= refund;
+        }
       }
     }
   }

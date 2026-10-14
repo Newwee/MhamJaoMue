@@ -80,3 +80,27 @@ test('Poker Pots - Split Pot on Tie', () => {
   assert.strictEqual(distribution.chipCredits['p2'], 100);
   assert.strictEqual(distribution.winners.length, 2);
 });
+
+test('Poker Pots - Active Players Raise with Chips Should Not Refund', () => {
+  const players: PlayerPotInfo[] = [
+    { id: 'p1', name: 'Alice', totalBetInHand: 12820, folded: false, isAllIn: false, pocketCards: [], seatIndex: 0 },
+    { id: 'p2', name: 'Bob', totalBetInHand: 5000, folded: false, isAllIn: false, pocketCards: [], seatIndex: 1 }
+  ];
+
+  const result = calculatePots(players);
+  assert.strictEqual(result.uncalledRefunds['p1'], undefined);
+});
+
+test('Poker Pots - All Opponents All-In Less Chips Refunds Excess', () => {
+  const players: PlayerPotInfo[] = [
+    { id: 'p1', name: 'Alice', totalBetInHand: 12820, folded: false, isAllIn: false, pocketCards: [], seatIndex: 0 },
+    { id: 'p2', name: 'Bob', totalBetInHand: 5000, folded: false, isAllIn: true, pocketCards: [], seatIndex: 1 },
+    { id: 'p3', name: 'Charlie', totalBetInHand: 5000, folded: false, isAllIn: true, pocketCards: [], seatIndex: 2 }
+  ];
+
+  const result = calculatePots(players);
+  assert.strictEqual(result.uncalledRefunds['p1'], 7820);
+  assert.strictEqual(result.pots.length, 1);
+  assert.strictEqual(result.pots[0].amount, 15000);
+});
+

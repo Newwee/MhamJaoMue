@@ -371,13 +371,21 @@ export class PokerEngine {
     }));
     const { pots, uncalledRefunds } = calculatePots(potInput);
     this.state.pots = pots;
+    let refundHappened = false;
     for (const [pId, refund] of Object.entries(uncalledRefunds)) {
       const p = this.state.players.find((pl) => pl.id === pId);
       if (p) {
         p.chips += refund;
         p.totalBetInHand -= refund;
         p.bet = Math.max(0, p.bet - refund);
+        refundHappened = true;
       }
+    }
+    if (refundHappened) {
+      this.state.currentBet = Math.max(
+        0,
+        ...this.state.players.filter((p) => !p.folded).map((p) => p.bet)
+      );
     }
   }
 
@@ -403,8 +411,14 @@ export class PokerEngine {
     }
     if (activeNonAllin.length === 1) {
       const single = activeNonAllin[0];
-      const isMatched = single.bet === this.state.currentBet && single.hasActed;
-      if (isMatched) return true;
+      const maxOtherBet = Math.max(
+        0,
+        ...this.state.players.filter((p) => !p.folded && p.id !== single.id).map((p) => p.bet)
+      );
+      if (single.hasActed && single.bet >= maxOtherBet) {
+        return true;
+      }
+      return false;
     }
     return activeNonAllin.every((p) => p.hasActed && p.bet === this.state.currentBet);
   }
@@ -413,7 +427,7 @@ export class PokerEngine {
     const currentIdx = this.state.players.findIndex((p) => p.id === this.state.turnPlayerId);
     const total = this.state.players.length;
 
-    for (let i = 1; i <= total; i++) {
+    for (let i = 1; i < total; i++) {
       const nextIdx = (currentIdx + i) % total;
       const candidate = this.state.players[nextIdx];
       if (!candidate.folded && !candidate.isAllIn) {
@@ -467,6 +481,9 @@ export class PokerEngine {
     }
 
     if (!canAnyPlayerAct) {
+      this.state.turnPlayerId = null;
+      this.state.turnDeadline = null;
+      this.emitState();
       if (this.nextHandTimer) clearTimeout(this.nextHandTimer);
       this.nextHandTimer = setTimeout(() => {
         this.advancePhase();

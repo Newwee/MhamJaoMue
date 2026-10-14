@@ -112,19 +112,19 @@ export const PokerTable: React.FC<PokerTableProps> = ({
       : seatedPlayers;
 
   const getPositionClass = (idx: number, count: number) => {
-    if (idx === 0) return 'bottom-4 left-1/2 -translate-x-1/2';
-    if (count === 2) return 'top-6 left-1/2 -translate-x-1/2';
+    if (idx === 0) return 'bottom-2 sm:bottom-4 left-1/2 -translate-x-1/2';
+    if (count === 2) return 'top-2 sm:top-3 left-1/2 -translate-x-1/2';
     if (count <= 4) {
-      if (idx === 1) return 'top-1/2 left-4 -translate-y-1/2';
-      if (idx === 2) return 'top-6 left-1/2 -translate-x-1/2';
-      return 'top-1/2 right-4 -translate-y-1/2';
+      if (idx === 1) return 'top-1/2 left-3 sm:left-6 -translate-y-1/2';
+      if (idx === 2) return 'top-2 sm:top-3 left-1/2 -translate-x-1/2';
+      return 'top-1/2 right-3 sm:right-6 -translate-y-1/2';
     }
     if (count <= 6) {
-      if (idx === 1) return 'bottom-16 left-8';
-      if (idx === 2) return 'top-16 left-12';
-      if (idx === 3) return 'top-6 left-1/2 -translate-x-1/2';
-      if (idx === 4) return 'top-16 right-12';
-      return 'bottom-16 right-8';
+      if (idx === 1) return 'bottom-12 left-4 sm:left-8';
+      if (idx === 2) return 'top-4 sm:top-6 left-6 sm:left-12';
+      if (idx === 3) return 'top-2 sm:top-3 left-1/2 -translate-x-1/2';
+      if (idx === 4) return 'top-4 sm:top-6 right-6 sm:right-12';
+      return 'bottom-12 right-4 sm:right-8';
     }
     const angle = (idx / count) * 2 * Math.PI + Math.PI / 2;
     const rx = 42;
@@ -256,84 +256,173 @@ export const PokerTable: React.FC<PokerTableProps> = ({
                 ? !isDealer
                 : state.players[(state.dealerIndex + 2) % state.players.length]?.id === player.id;
 
+            const isTopSeat =
+              idx > 0 &&
+              ((rotatedPlayers.length === 2 && idx === 1) ||
+                (rotatedPlayers.length <= 4 && idx === 2) ||
+                (rotatedPlayers.length === 3 && (idx === 1 || idx === 2)) ||
+                (rotatedPlayers.length > 4 &&
+                  idx >= Math.floor(rotatedPlayers.length / 3) &&
+                  idx <= Math.floor((2 * rotatedPlayers.length) / 3)));
+
             return (
               <div
                 key={player.id}
                 className={`absolute ${getPositionClass(idx, rotatedPlayers.length)} z-20 flex flex-col items-center transition-all duration-300`}
               >
-                {player.bet > 0 && (
+                {!isTopSeat && player.bet > 0 && (
                   <div className="mb-1 flex items-center gap-1 bg-black/70 backdrop-blur-md px-2 py-0.5 rounded-full border border-gold/40 shadow-md">
                     <ChipStack amount={player.bet} size="sm" />
                   </div>
                 )}
 
-                <div className="relative flex flex-col items-center">
-                  <div
-                    className={`relative w-12 h-12 sm:w-14 sm:h-14 rounded-full p-0.5 transition-all ${
-                      isTurn
-                        ? 'ring-4 ring-amber-400 shadow-[0_0_20px_rgba(234,179,8,0.8)] scale-105'
-                        : 'border-2 border-zinc-700 bg-zinc-900'
-                    } ${player.folded ? 'opacity-40 grayscale' : ''}`}
-                  >
-                    <div className="w-full h-full rounded-full bg-gradient-to-tr from-zinc-800 to-zinc-950 flex items-center justify-center font-black font-mono text-amber-300 text-xs sm:text-sm">
-                      {player.name.slice(0, 2).toUpperCase()}
+                {isTopSeat ? (
+                  <div className="flex flex-col items-center">
+                    <div className="flex items-center gap-1.5 sm:gap-2">
+                      <div className="relative flex flex-col items-center">
+                        <div
+                          className={`relative w-11 h-11 sm:w-13 sm:h-13 rounded-full p-0.5 transition-all ${
+                            isTurn
+                              ? 'ring-4 ring-amber-400 shadow-[0_0_20px_rgba(234,179,8,0.8)] scale-105'
+                              : 'border-2 border-zinc-700 bg-zinc-900'
+                          } ${player.folded ? 'opacity-40 grayscale' : ''}`}
+                        >
+                          <div className="w-full h-full rounded-full bg-gradient-to-tr from-zinc-800 to-zinc-950 flex items-center justify-center font-black font-mono text-amber-300 text-xs sm:text-sm">
+                            {player.name.slice(0, 2).toUpperCase()}
+                          </div>
+
+                          {isDealer && (
+                            <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-amber-400 text-black font-black font-mono text-[10px] flex items-center justify-center border border-white shadow">
+                              D
+                            </div>
+                          )}
+                          {isSB && !isDealer && (
+                            <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-blue-500 text-white font-black font-mono text-[9px] flex items-center justify-center border border-white shadow">
+                              SB
+                            </div>
+                          )}
+                          {isBB && (
+                            <div className="absolute -top-1 -left-1 w-5 h-5 rounded-full bg-purple-500 text-white font-black font-mono text-[9px] flex items-center justify-center border border-white shadow">
+                              BB
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="mt-0.5 flex flex-col items-center bg-zinc-950/90 backdrop-blur-md border border-zinc-800 px-2 py-0.5 rounded-lg shadow-md max-w-[100px] text-center">
+                          <span className="text-[10px] font-bold text-white truncate w-full">
+                            {player.name} {isLocal && '(You)'}
+                          </span>
+                          <span className="text-[10px] font-mono font-bold text-amber-400">
+                            ${player.chips.toLocaleString()}
+                          </span>
+                          {player.isAllIn && (
+                            <span className="text-[8px] font-mono font-bold text-red-400 uppercase">
+                              All-in
+                            </span>
+                          )}
+                          {player.folded && (
+                            <span className="text-[8px] font-mono text-zinc-500 uppercase">Folded</span>
+                          )}
+                        </div>
+                      </div>
+
+                      {player.pocketCards.length > 0 && !player.folded && (
+                        <div className="flex -space-x-3.5 z-10">
+                          {player.pocketCards.map((c, cIdx) => (
+                            <PlayingCard
+                              key={cIdx}
+                              card={c}
+                              size="sm"
+                              animateDeal={true}
+                              highlight={Boolean(player.handRankDescription)}
+                              dealerSqueeze={state.phase === 'showdown' && !c.hidden}
+                            />
+                          ))}
+                        </div>
+                      )}
                     </div>
 
-                    {isDealer && (
-                      <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-amber-400 text-black font-black font-mono text-[10px] flex items-center justify-center border border-white shadow">
-                        D
+                    {player.handRankDescription && (
+                      <div className="mt-1 bg-amber-500 text-black font-black font-mono text-[9px] px-2 py-0.5 rounded-full shadow-lg">
+                        {player.handRankDescription}
                       </div>
                     )}
-                    {isSB && !isDealer && (
-                      <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-blue-500 text-white font-black font-mono text-[9px] flex items-center justify-center border border-white shadow">
-                        SB
-                      </div>
-                    )}
-                    {isBB && (
-                      <div className="absolute -top-1 -left-1 w-5 h-5 rounded-full bg-purple-500 text-white font-black font-mono text-[9px] flex items-center justify-center border border-white shadow">
-                        BB
+
+                    {player.bet > 0 && (
+                      <div className="mt-1 flex items-center gap-1 bg-black/70 backdrop-blur-md px-2 py-0.5 rounded-full border border-gold/40 shadow-md">
+                        <ChipStack amount={player.bet} size="sm" />
                       </div>
                     )}
                   </div>
+                ) : (
+                  <div className="relative flex flex-col items-center">
+                    <div
+                      className={`relative w-12 h-12 sm:w-14 sm:h-14 rounded-full p-0.5 transition-all ${
+                        isTurn
+                          ? 'ring-4 ring-amber-400 shadow-[0_0_20px_rgba(234,179,8,0.8)] scale-105'
+                          : 'border-2 border-zinc-700 bg-zinc-900'
+                      } ${player.folded ? 'opacity-40 grayscale' : ''}`}
+                    >
+                      <div className="w-full h-full rounded-full bg-gradient-to-tr from-zinc-800 to-zinc-950 flex items-center justify-center font-black font-mono text-amber-300 text-xs sm:text-sm">
+                        {player.name.slice(0, 2).toUpperCase()}
+                      </div>
 
-                  <div className="mt-1 flex flex-col items-center bg-zinc-950/90 backdrop-blur-md border border-zinc-800 px-2.5 py-0.5 rounded-lg shadow-md max-w-[110px] text-center">
-                    <span className="text-[11px] font-bold text-white truncate w-full">
-                      {player.name} {isLocal && '(You)'}
-                    </span>
-                    <span className="text-[10px] font-mono font-bold text-amber-400">
-                      ${player.chips.toLocaleString()}
-                    </span>
-                    {player.isAllIn && (
-                      <span className="text-[9px] font-mono font-bold text-red-400 uppercase">
-                        All-in
+                      {isDealer && (
+                        <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-amber-400 text-black font-black font-mono text-[10px] flex items-center justify-center border border-white shadow">
+                          D
+                        </div>
+                      )}
+                      {isSB && !isDealer && (
+                        <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-blue-500 text-white font-black font-mono text-[9px] flex items-center justify-center border border-white shadow">
+                          SB
+                        </div>
+                      )}
+                      {isBB && (
+                        <div className="absolute -top-1 -left-1 w-5 h-5 rounded-full bg-purple-500 text-white font-black font-mono text-[9px] flex items-center justify-center border border-white shadow">
+                          BB
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="mt-1 flex flex-col items-center bg-zinc-950/90 backdrop-blur-md border border-zinc-800 px-2.5 py-0.5 rounded-lg shadow-md max-w-[110px] text-center">
+                      <span className="text-[11px] font-bold text-white truncate w-full">
+                        {player.name} {isLocal && '(You)'}
                       </span>
+                      <span className="text-[10px] font-mono font-bold text-amber-400">
+                        ${player.chips.toLocaleString()}
+                      </span>
+                      {player.isAllIn && (
+                        <span className="text-[9px] font-mono font-bold text-red-400 uppercase">
+                          All-in
+                        </span>
+                      )}
+                      {player.folded && (
+                        <span className="text-[9px] font-mono text-zinc-500 uppercase">Folded</span>
+                      )}
+                    </div>
+
+                    {player.pocketCards.length > 0 && !player.folded && (
+                      <div className="flex -space-x-3.5 -mt-2 z-10">
+                        {player.pocketCards.map((c, cIdx) => (
+                          <PlayingCard
+                            key={cIdx}
+                            card={c}
+                            size="sm"
+                            animateDeal={true}
+                            highlight={Boolean(player.handRankDescription)}
+                            dealerSqueeze={state.phase === 'showdown' && !c.hidden}
+                          />
+                        ))}
+                      </div>
                     )}
-                    {player.folded && (
-                      <span className="text-[9px] font-mono text-zinc-500 uppercase">Folded</span>
+
+                    {player.handRankDescription && (
+                      <div className="mt-1 bg-amber-500 text-black font-black font-mono text-[9px] px-2 py-0.5 rounded-full shadow-lg">
+                        {player.handRankDescription}
+                      </div>
                     )}
                   </div>
-
-                  {player.pocketCards.length > 0 && !player.folded && (
-                    <div className="flex gap-1 -mt-2 z-10">
-                      {player.pocketCards.map((c, cIdx) => (
-                        <PlayingCard
-                          key={cIdx}
-                          card={c}
-                          size="sm"
-                          animateDeal={true}
-                          highlight={Boolean(player.handRankDescription)}
-                          dealerSqueeze={state.phase === 'showdown' && !c.hidden}
-                        />
-                      ))}
-                    </div>
-                  )}
-
-                  {player.handRankDescription && (
-                    <div className="mt-1 bg-amber-500 text-black font-black font-mono text-[9px] px-2 py-0.5 rounded-full shadow-lg">
-                      {player.handRankDescription}
-                    </div>
-                  )}
-                </div>
+                )}
               </div>
             );
           })}
