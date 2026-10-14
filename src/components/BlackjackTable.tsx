@@ -102,7 +102,12 @@ export const BlackjackTable: React.FC<BlackjackTableProps> = ({
                 {state.dealerCards.length > 0 ? (
                   state.dealerCards.map((card, idx) => (
                     <div key={idx} className="animate-deal-card">
-                      <PlayingCard card={card} size="md" />
+                      <PlayingCard
+                        card={card}
+                        size="md"
+                        isPeeling={Boolean(card.hidden && state.phase === 'player_turns')}
+                        animateDeal={true}
+                      />
                     </div>
                   ))
                 ) : (

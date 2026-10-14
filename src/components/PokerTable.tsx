@@ -199,7 +199,7 @@ export const PokerTable: React.FC<PokerTableProps> = ({
             <div className="flex items-center gap-1.5 sm:gap-2.5 z-10 mt-6 sm:mt-10">
               {state.communityCards.map((card, idx) => (
                 <div key={idx} className="animate-deal-card">
-                  <PlayingCard card={card} size="md" />
+                  <PlayingCard card={card} size="md" animateDeal={true} />
                 </div>
               ))}
               {Array.from({ length: 5 - state.communityCards.length }).map((_, idx) => (
@@ -309,6 +309,7 @@ export const PokerTable: React.FC<PokerTableProps> = ({
                           key={cIdx}
                           card={c}
                           size="sm"
+                          animateDeal={true}
                           highlight={Boolean(player.handRankDescription)}
                         />
                       ))}
