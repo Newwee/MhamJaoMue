@@ -23,8 +23,8 @@ test('Multiplayer Integration - Two Sessions Room Lifecycle, Hidden Card Privacy
   const clientB: ClientSocketType = ClientSocket(serverUrl);
 
   await Promise.all([
-    new Promise((resolve) => clientA.on('connect', resolve)),
-    new Promise((resolve) => clientB.on('connect', resolve))
+    new Promise<void>((resolve) => clientA.on('connect', () => resolve())),
+    new Promise<void>((resolve) => clientB.on('connect', () => resolve()))
   ]);
 
   let roomId = '';

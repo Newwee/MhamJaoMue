@@ -26,9 +26,9 @@ export function useSocket(profile: StoredProfile, onChipsUpdate: (chips: number)
 
   useEffect(() => {
     const isDev = window.location.port === '5173';
-    const serverUrl = isDev
-      ? `${window.location.protocol}//${window.location.hostname}:3001`
-      : '/';
+    const serverUrl =
+      (import.meta as any).env?.VITE_SERVER_URL ||
+      (isDev ? `${window.location.protocol}//${window.location.hostname}:3001` : '/');
 
     const socket = io(serverUrl, {
       transports: ['websocket', 'polling'],
