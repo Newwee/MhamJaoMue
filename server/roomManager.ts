@@ -28,7 +28,7 @@ export interface GameRoom {
   pokerEngine?: PokerEngine;
   blackjackEngine?: BlackjackEngine;
   createdAt: number;
-  botTurnTimer?: NodeJS.Timeout;
+  botTurnTimer?: ReturnType<typeof setTimeout>;
 }
 
 export class RoomManager {

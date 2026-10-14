@@ -10,8 +10,8 @@ export class PokerEngine {
   public state: PokerGameState;
   private deck: Card[] = [];
   private onStateChange?: (state: PokerGameState) => void;
-  private turnTimeoutTimer: NodeJS.Timeout | null = null;
-  private nextHandTimer: NodeJS.Timeout | null = null;
+  private turnTimeoutTimer: ReturnType<typeof setTimeout> | null = null;
+  private nextHandTimer: ReturnType<typeof setTimeout> | null = null;
   public readonly turnDurationMs: number = 20000;
 
   constructor(

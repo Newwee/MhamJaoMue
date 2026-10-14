@@ -20,7 +20,7 @@ export class BlackjackEngine {
   private shoe: Card[] = [];
   private dealerHoleCard: Card | null = null;
   private onStateChange?: (state: BlackjackGameState) => void;
-  private turnTimeoutTimer: NodeJS.Timeout | null = null;
+  private turnTimeoutTimer: ReturnType<typeof setTimeout> | null = null;
   public readonly turnDurationMs: number = 20000;
 
   constructor(

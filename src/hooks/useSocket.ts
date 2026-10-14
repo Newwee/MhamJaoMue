@@ -1,9 +1,10 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { GameType, RoomSummary, BasePlayer } from '../types/common';
 import { PokerGameState, PokerActionType } from '../types/poker';
 import { BlackjackGameState, BlackjackActionType } from '../types/blackjack';
 import { StoredProfile } from '../utils/playerStorage';
+import { LocalGameController } from '../utils/localGameController';
 
 export interface RoomState {
   id: string;
@@ -17,23 +18,47 @@ export interface RoomState {
 
 export function useSocket(profile: StoredProfile, onChipsUpdate: (chips: number) => void) {
   const socketRef = useRef<Socket | null>(null);
-  const [isConnected, setIsConnected] = useState<boolean>(false);
+  const [isConnected, setIsConnected] = useState<boolean>(true);
   const [roomState, setRoomState] = useState<RoomState | null>(null);
   const [pokerState, setPokerState] = useState<PokerGameState | null>(null);
   const [blackjackState, setBlackjackState] = useState<BlackjackGameState | null>(null);
   const [rooms, setRooms] = useState<RoomSummary[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  const localController = useMemo(() => {
+    return new LocalGameController({
+      onRoomState: (r) => setRoomState(r),
+      onPokerState: (ps) => setPokerState(ps),
+      onBlackjackState: (bs) => setBlackjackState(bs),
+      onError: (msg) => {
+        setErrorMessage(msg);
+        setTimeout(() => setErrorMessage(null), 4000);
+      },
+    });
+  }, []);
+
   useEffect(() => {
-    const isDev = window.location.port === '5173';
+    const isVercelHost =
+      typeof window !== 'undefined' &&
+      window.location.hostname.includes('vercel.app');
+
+    const explicitServerUrl = (import.meta as any).env?.VITE_SERVER_URL;
+    const isDev = typeof window !== 'undefined' && window.location.port === '5173';
+
+    if (isVercelHost && !explicitServerUrl) {
+      setIsConnected(true);
+      return;
+    }
+
     const serverUrl =
-      (import.meta as any).env?.VITE_SERVER_URL ||
+      explicitServerUrl ||
       (isDev ? `${window.location.protocol}//${window.location.hostname}:3001` : '/');
 
     const socket = io(serverUrl, {
       transports: ['websocket', 'polling'],
-      reconnectionAttempts: 10,
+      reconnectionAttempts: 5,
       reconnectionDelay: 1000,
+      timeout: 4000,
     });
 
     socketRef.current = socket;
@@ -43,8 +68,20 @@ export function useSocket(profile: StoredProfile, onChipsUpdate: (chips: number)
       setErrorMessage(null);
     });
 
+    socket.on('connect_error', () => {
+      if (isVercelHost) {
+        socket.disconnect();
+        socketRef.current = null;
+        setIsConnected(true);
+      } else {
+        setIsConnected(false);
+      }
+    });
+
     socket.on('disconnect', () => {
-      setIsConnected(false);
+      if (!isVercelHost) {
+        setIsConnected(false);
+      }
     });
 
     socket.on('room_list', (data: RoomSummary[]) => {
@@ -90,82 +127,161 @@ export function useSocket(profile: StoredProfile, onChipsUpdate: (chips: number)
 
   const createRoom = useCallback(
     (gameType: GameType, name?: string, maxPlayers?: number, isSinglePlayer = false) => {
-      if (!socketRef.current) return;
-      socketRef.current.emit('create_room', {
-        player: {
+      if (isSinglePlayer) {
+        localController.startSinglePlayer(gameType, {
           id: profile.id,
           name: profile.name,
           avatar: profile.avatar,
           chips: profile.chips,
-        },
-        gameType,
-        name,
-        maxPlayers,
-        isSinglePlayer,
-      });
+        });
+        return;
+      }
+
+      if (socketRef.current && socketRef.current.connected) {
+        socketRef.current.emit('create_room', {
+          player: {
+            id: profile.id,
+            name: profile.name,
+            avatar: profile.avatar,
+            chips: profile.chips,
+          },
+          gameType,
+          name,
+          maxPlayers,
+          isSinglePlayer,
+        });
+      } else {
+        localController.createP2PRoom(
+          gameType,
+          {
+            id: profile.id,
+            name: profile.name,
+            avatar: profile.avatar,
+            chips: profile.chips,
+          },
+          name,
+          maxPlayers
+        );
+      }
     },
-    [profile]
+    [profile, localController]
   );
 
   const joinRoom = useCallback(
     (roomId: string) => {
-      if (!socketRef.current) return;
-      socketRef.current.emit('join_room', {
-        roomId,
-        player: {
+      if (socketRef.current && socketRef.current.connected) {
+        socketRef.current.emit('join_room', {
+          roomId,
+          player: {
+            id: profile.id,
+            name: profile.name,
+            avatar: profile.avatar,
+            chips: profile.chips,
+          },
+        });
+      } else {
+        localController.joinP2PRoom(roomId, {
           id: profile.id,
           name: profile.name,
           avatar: profile.avatar,
           chips: profile.chips,
-        },
-      });
+        });
+      }
     },
-    [profile]
+    [profile, localController]
   );
 
   const leaveRoom = useCallback(() => {
-    if (!socketRef.current) return;
-    socketRef.current.emit('leave_room');
-  }, []);
+    if (localController.isRunning()) {
+      localController.cleanup();
+      setRoomState(null);
+      setPokerState(null);
+      setBlackjackState(null);
+    }
+    if (socketRef.current && socketRef.current.connected) {
+      socketRef.current.emit('leave_room');
+    }
+  }, [localController]);
 
-  const setReady = useCallback((isReady: boolean) => {
-    if (!socketRef.current) return;
-    socketRef.current.emit('set_ready', { isReady });
-  }, []);
+  const setReady = useCallback(
+    (isReady: boolean) => {
+      if (localController.isRunning()) {
+        localController.setReady(isReady);
+      }
+      if (socketRef.current && socketRef.current.connected) {
+        socketRef.current.emit('set_ready', { isReady });
+      }
+    },
+    [localController]
+  );
 
   const startGame = useCallback(() => {
-    if (!socketRef.current) return;
-    socketRef.current.emit('start_game');
-  }, []);
+    if (localController.isRunning()) {
+      localController.startGame();
+    }
+    if (socketRef.current && socketRef.current.connected) {
+      socketRef.current.emit('start_game');
+    }
+  }, [localController]);
 
   const addBot = useCallback(() => {
-    if (!socketRef.current) return;
-    socketRef.current.emit('add_bot');
-  }, []);
+    if (localController.isRunning()) {
+      localController.addBot();
+    }
+    if (socketRef.current && socketRef.current.connected) {
+      socketRef.current.emit('add_bot');
+    }
+  }, [localController]);
 
-  const sendPokerAction = useCallback((action: PokerActionType, amount?: number) => {
-    if (!socketRef.current) return;
-    socketRef.current.emit('poker_action', { action, amount });
-  }, []);
+  const sendPokerAction = useCallback(
+    (action: PokerActionType, amount?: number) => {
+      if (localController.isRunning()) {
+        localController.handlePokerAction(action, amount);
+      }
+      if (socketRef.current && socketRef.current.connected) {
+        socketRef.current.emit('poker_action', { action, amount });
+      }
+    },
+    [localController]
+  );
 
-  const sendBlackjackAction = useCallback((action: BlackjackActionType) => {
-    if (!socketRef.current) return;
-    socketRef.current.emit('blackjack_action', { action });
-  }, []);
+  const sendBlackjackAction = useCallback(
+    (action: BlackjackActionType) => {
+      if (localController.isRunning()) {
+        localController.handleBlackjackAction(action);
+      }
+      if (socketRef.current && socketRef.current.connected) {
+        socketRef.current.emit('blackjack_action', { action });
+      }
+    },
+    [localController]
+  );
 
-  const sendBlackjackBet = useCallback((amount: number) => {
-    if (!socketRef.current) return;
-    socketRef.current.emit('blackjack_bet', { amount });
-  }, []);
+  const sendBlackjackBet = useCallback(
+    (amount: number) => {
+      if (localController.isRunning()) {
+        localController.handleBlackjackBet(amount);
+      }
+      if (socketRef.current && socketRef.current.connected) {
+        socketRef.current.emit('blackjack_bet', { amount });
+      }
+    },
+    [localController]
+  );
 
   const startNextHand = useCallback(() => {
-    if (!socketRef.current) return;
-    socketRef.current.emit('start_next_hand');
-  }, []);
+    if (localController.isRunning()) {
+      localController.startNextHand();
+    }
+    if (socketRef.current && socketRef.current.connected) {
+      socketRef.current.emit('start_next_hand');
+    }
+  }, [localController]);
 
   const refreshRooms = useCallback(() => {
-    if (!socketRef.current) return;
-    socketRef.current.emit('get_rooms');
+    if (socketRef.current && socketRef.current.connected) {
+      socketRef.current.emit('get_rooms');
+    }
   }, []);
 
   return {
