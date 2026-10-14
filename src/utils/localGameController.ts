@@ -167,7 +167,7 @@ export class LocalGameController {
       });
 
       this.callbacks.onRoomState(this.roomState);
-      this.blackjackEngine.placeBet(localPlayer.id, 100);
+      this.callbacks.onBlackjackState(this.blackjackEngine.getState());
     }
   }
 
@@ -356,6 +356,11 @@ export class LocalGameController {
         break;
       }
 
+      case 'start_next_hand': {
+        this.startNextHand();
+        break;
+      }
+
       default:
         break;
     }
@@ -449,6 +454,30 @@ export class LocalGameController {
       this.emitFilteredPokerState(this.pokerEngine.getState());
       this.broadcastP2PPokerState(this.pokerEngine.getState());
       this.checkLocalBotAction();
+    } else if (this.blackjackEngine) {
+      const existingPlayers = this.blackjackEngine.state.players;
+      const existingMap = new Map(existingPlayers.map((pl) => [pl.id, pl]));
+
+      const bjPlayers: BlackjackPlayer[] = this.roomState.players.map((p, idx) => {
+        const ex = existingMap.get(p.id);
+        return {
+          ...p,
+          hands: ex?.hands || [],
+          currentHandIndex: ex?.currentHandIndex || 0,
+          currentBet: ex?.currentBet || 25,
+          hasPlacedBet: ex?.hasPlacedBet || false,
+          seatIndex: idx,
+        };
+      });
+
+      this.blackjackEngine.setPlayers(bjPlayers);
+      if (this.blackjackEngine.state.phase === 'betting') {
+        this.blackjackEngine.autoBetBots();
+      }
+      this.callbacks.onBlackjackState(this.blackjackEngine.getState());
+      for (const conn of this.peerConnections.values()) {
+        conn.send({ type: 'blackjack_state', state: this.blackjackEngine.getState() });
+      }
     }
 
     this.broadcastP2PRoomState();
@@ -494,6 +523,10 @@ export class LocalGameController {
       });
 
       this.callbacks.onBlackjackState(this.blackjackEngine.getState());
+      for (const conn of this.peerConnections.values()) {
+        conn.send({ type: 'blackjack_state', state: this.blackjackEngine.getState() });
+      }
+      this.blackjackEngine.autoBetBots();
     }
   }
 
@@ -572,21 +605,21 @@ export class LocalGameController {
   }
 
   public startNextHand(): void {
-    if (this.pokerEngine) {
-      this.pokerEngine.startHand();
-    } else if (this.blackjackEngine) {
-      this.blackjackEngine.state.phase = 'betting';
-      for (const p of this.blackjackEngine.state.players) {
-        p.hands = [];
-        p.hasPlacedBet = false;
-      }
-      this.blackjackEngine.state.dealerCards = [];
-      if (this.roomState?.isSinglePlayer) {
-        const lastBet = this.blackjackEngine.state.players[0]?.currentBet || 100;
-        this.blackjackEngine.placeBet(this.myPlayerId, lastBet);
-      } else {
+    if (this.isP2PHost || this.roomState?.isSinglePlayer) {
+      if (this.pokerEngine) {
+        this.pokerEngine.startHand();
+      } else if (this.blackjackEngine) {
+        this.blackjackEngine.resetForNextHand();
         this.callbacks.onBlackjackState(this.blackjackEngine.getState());
+        for (const conn of this.peerConnections.values()) {
+          conn.send({ type: 'blackjack_state', state: this.blackjackEngine.getState() });
+        }
       }
+    } else if (this.hostConnection) {
+      this.hostConnection.send({
+        type: 'start_next_hand',
+        playerId: this.myPlayerId,
+      });
     }
   }
 

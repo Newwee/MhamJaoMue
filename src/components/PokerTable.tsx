@@ -200,8 +200,17 @@ export const PokerTable: React.FC<PokerTableProps> = ({
 
             <div className="flex items-center gap-1.5 sm:gap-2.5 z-10 mt-6 sm:mt-10">
               {state.communityCards.map((card, idx) => (
-                <div key={idx} className="animate-deal-card">
-                  <PlayingCard card={card} size="md" animateDeal={true} />
+                <div
+                  key={`${card.rank}-${card.suit}-${idx}`}
+                  className="animate-deal-card"
+                  style={{ animationDelay: `${(idx % 3) * 140}ms` }}
+                >
+                  <PlayingCard
+                    card={card}
+                    size="md"
+                    animateDeal={true}
+                    dealerSqueeze={idx >= 3}
+                  />
                 </div>
               ))}
               {Array.from({ length: 5 - state.communityCards.length }).map((_, idx) => (
@@ -313,6 +322,7 @@ export const PokerTable: React.FC<PokerTableProps> = ({
                           size="sm"
                           animateDeal={true}
                           highlight={Boolean(player.handRankDescription)}
+                          dealerSqueeze={state.phase === 'showdown' && !c.hidden}
                         />
                       ))}
                     </div>

@@ -225,7 +225,7 @@ export class RoomManager {
       player.isConnected = false;
     }
 
-    setTimeout(() => {
+    const disconnectTimer = setTimeout(() => {
       const currentRoom = this.rooms.get(roomId);
       if (!currentRoom) return;
       const targetPlayer = currentRoom.players.find((p) => p.id === playerId);
@@ -233,6 +233,9 @@ export class RoomManager {
         this.leaveRoom(socketId);
       }
     }, 60000);
+    if (typeof (disconnectTimer as any)?.unref === 'function') {
+      (disconnectTimer as any).unref();
+    }
 
     this.syncRoomState(room);
   }

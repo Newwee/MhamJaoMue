@@ -201,6 +201,8 @@ export const App: React.FC = () => {
               onPlaceBet={sendBlackjackBet}
               onNextHand={startNextHand}
               onLeave={leaveRoom}
+              onAddBot={addBot}
+              isHost={isCurrentHost}
             />
           ) : (
             <RoomLobby

@@ -44,29 +44,38 @@ export default {
       },
       keyframes: {
         deal: {
-          '0%': { transform: 'scale(0.2) translateY(-140px) rotate(-15deg)', opacity: '0' },
-          '100%': { transform: 'scale(1) translateY(0) rotate(0deg)', opacity: '1' }
+          '0%': { transform: 'perspective(1000px) translateY(-100px) translateX(40px) rotate(-20deg) scale(0.4)', opacity: '0' },
+          '70%': { transform: 'perspective(1000px) translateY(3px) translateX(0) rotate(1deg) scale(1.03)', opacity: '1' },
+          '100%': { transform: 'perspective(1000px) translateY(0) translateX(0) rotate(0deg) scale(1)', opacity: '1' }
         },
         flip: {
-          '0%': { transform: 'rotateY(180deg) scale(0.9)', opacity: '0.8' },
-          '100%': { transform: 'rotateY(0deg) scale(1)', opacity: '1' }
+          '0%': { transform: 'perspective(1000px) rotateY(180deg) scale(0.92)', opacity: '0.9' },
+          '100%': { transform: 'perspective(1000px) rotateY(0deg) scale(1)', opacity: '1' }
         },
         pulseGlow: {
           '0%, 100%': { boxShadow: '0 0 15px rgba(234, 179, 8, 0.6)' },
           '50%': { boxShadow: '0 0 35px rgba(234, 179, 8, 0.95)' }
         },
         suspensePeel: {
-          '0%': { transform: 'translateY(0) rotate(0deg)' },
-          '30%': { transform: 'translateY(-10px) rotate(-5deg)' },
-          '60%': { transform: 'translateY(-5px) rotate(3deg)' },
-          '100%': { transform: 'translateY(0) rotate(0deg)' }
+          '0%, 100%': { transform: 'perspective(1000px) translateY(0) rotate(0deg) scale(1)', boxShadow: '0 4px 8px rgba(0,0,0,0.5)' },
+          '30%': { transform: 'perspective(1000px) translateY(-9px) rotateX(16deg) rotateY(-8deg) rotateZ(-2deg) scale(1.04)', boxShadow: '-8px 16px 24px rgba(234,179,8,0.45)' },
+          '65%': { transform: 'perspective(1000px) translateY(-5px) rotateX(10deg) rotateY(6deg) rotateZ(1deg) scale(1.02)', boxShadow: '-4px 10px 18px rgba(234,179,8,0.3)' }
+        },
+        dealerSqueeze: {
+          '0%': { transform: 'perspective(1000px) rotateY(180deg) rotateX(0deg) translateY(0) scale(1)', filter: 'brightness(1)' },
+          '25%': { transform: 'perspective(1000px) rotateY(155deg) rotateX(20deg) translateY(-14px) rotateZ(-4deg) scale(1.07)', filter: 'brightness(1.18)', boxShadow: '-10px 20px 30px rgba(0,0,0,0.65)' },
+          '50%': { transform: 'perspective(1000px) rotateY(110deg) rotateX(26deg) translateY(-18px) rotateZ(-6deg) scale(1.12)', filter: 'brightness(1.25)', boxShadow: '-16px 28px 40px rgba(0,0,0,0.75)' },
+          '75%': { transform: 'perspective(1000px) rotateY(35deg) rotateX(10deg) translateY(-8px) rotateZ(-2deg) scale(1.05)', filter: 'brightness(1.1)', boxShadow: '-8px 14px 22px rgba(0,0,0,0.5)' },
+          '90%': { transform: 'perspective(1000px) rotateY(0deg) rotateX(0deg) translateY(-2px) scale(1.02)' },
+          '100%': { transform: 'perspective(1000px) rotateY(0deg) rotateX(0deg) translateY(0) scale(1)', filter: 'brightness(1)' }
         }
       },
       animation: {
-        'deal-card': 'deal 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
-        'flip-card': 'flip 0.5s ease-out forwards',
+        'deal-card': 'deal 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+        'flip-card': 'flip 0.6s ease-out forwards',
+        'dealer-squeeze': 'dealerSqueeze 1.4s cubic-bezier(0.25, 1, 0.5, 1) forwards',
         'turn-pulse': 'pulseGlow 1.5s infinite',
-        'suspense-peel': 'suspensePeel 1s ease-in-out infinite'
+        'suspense-peel': 'suspensePeel 1.8s ease-in-out infinite'
       }
     },
   },

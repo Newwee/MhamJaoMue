@@ -21,6 +21,8 @@ export class BlackjackEngine {
   private dealerHoleCard: Card | null = null;
   private onStateChange?: (state: BlackjackGameState) => void;
   private turnTimeoutTimer: ReturnType<typeof setTimeout> | null = null;
+  private dealerTurnTimer: ReturnType<typeof setTimeout> | null = null;
+  private botActionTimer: ReturnType<typeof setTimeout> | null = null;
   public readonly turnDurationMs: number = 20000;
 
   constructor(
@@ -86,6 +88,49 @@ export class BlackjackEngine {
     return this.shoe.pop()!;
   }
 
+  public clearTimers(): void {
+    if (this.turnTimeoutTimer) {
+      clearTimeout(this.turnTimeoutTimer);
+      this.turnTimeoutTimer = null;
+    }
+    if (this.dealerTurnTimer) {
+      clearTimeout(this.dealerTurnTimer);
+      this.dealerTurnTimer = null;
+    }
+    if (this.botActionTimer) {
+      clearTimeout(this.botActionTimer);
+      this.botActionTimer = null;
+    }
+  }
+
+  public autoBetBots(): void {
+    if (this.state.phase !== 'betting') return;
+    let anyBotBet = false;
+    for (const p of this.state.players) {
+      if (p.isBot && !p.hasPlacedBet && p.chips >= this.state.minBet) {
+        p.currentBet = Math.min(100, p.chips);
+        p.hasPlacedBet = true;
+        this.state.actionLog.push(`${p.name} places bet $${p.currentBet}`);
+        anyBotBet = true;
+      }
+    }
+    if (anyBotBet) {
+      this.emitState();
+    }
+    const allPlaced = this.state.players.every((p) => p.hasPlacedBet || p.chips < this.state.minBet);
+    if (allPlaced && this.state.players.some((p) => p.hasPlacedBet)) {
+      if (this.dealerTurnTimer) clearTimeout(this.dealerTurnTimer);
+      this.dealerTurnTimer = setTimeout(() => {
+        if (this.state.phase === 'betting') {
+          this.dealRound();
+        }
+      }, 600);
+      if (typeof (this.dealerTurnTimer as any)?.unref === 'function') {
+        (this.dealerTurnTimer as any).unref();
+      }
+    }
+  }
+
   public placeBet(playerId: string, amount: number): boolean {
     if (this.state.phase !== 'betting') return false;
     const player = this.state.players.find((p) => p.id === playerId);
@@ -98,9 +143,19 @@ export class BlackjackEngine {
     this.state.actionLog.push(`${player.name} bet $${amount}`);
     this.emitState();
 
+    this.autoBetBots();
+
     const allPlaced = this.state.players.every((p) => p.hasPlacedBet || p.chips < this.state.minBet);
     if (allPlaced && this.state.players.some((p) => p.hasPlacedBet)) {
-      this.dealRound();
+      if (this.dealerTurnTimer) clearTimeout(this.dealerTurnTimer);
+      this.dealerTurnTimer = setTimeout(() => {
+        if (this.state.phase === 'betting') {
+          this.dealRound();
+        }
+      }, 500);
+      if (typeof (this.dealerTurnTimer as any)?.unref === 'function') {
+        (this.dealerTurnTimer as any).unref();
+      }
     }
     return true;
   }
@@ -110,7 +165,7 @@ export class BlackjackEngine {
     const activePlayers = this.state.players.filter((p) => p.hasPlacedBet && p.currentBet <= p.chips);
     if (activePlayers.length === 0) return false;
 
-    this.clearTurnTimeout();
+    this.clearTimers();
     this.state.handNumber += 1;
     this.state.phase = 'dealing';
     this.state.dealerCards = [];
@@ -169,7 +224,7 @@ export class BlackjackEngine {
   }
 
   private findNextTurn(startPlayerIdx: number, startHandIdx: number): void {
-    this.clearTurnTimeout();
+    this.clearTimers();
     const activePlayers = this.state.players.filter((p) => p.hands.length > 0);
 
     for (let pIdx = startPlayerIdx; pIdx < activePlayers.length; pIdx++) {
@@ -190,6 +245,10 @@ export class BlackjackEngine {
             (this.turnTimeoutTimer as any).unref();
           }
           this.emitState();
+
+          if (p.isBot) {
+            this.scheduleBotTurn(p.id);
+          }
           return;
         }
       }
@@ -198,10 +257,26 @@ export class BlackjackEngine {
     this.startDealerTurn();
   }
 
-  private clearTurnTimeout(): void {
-    if (this.turnTimeoutTimer) {
-      clearTimeout(this.turnTimeoutTimer);
-      this.turnTimeoutTimer = null;
+  private scheduleBotTurn(botId: string): void {
+    if (this.botActionTimer) clearTimeout(this.botActionTimer);
+    this.botActionTimer = setTimeout(() => {
+      if (this.state.phase !== 'player_turns' || this.state.currentTurnPlayerId !== botId) {
+        return;
+      }
+      const bot = this.state.players.find((p) => p.id === botId);
+      if (!bot) return;
+      const hand = bot.hands[this.state.currentTurnHandIndex];
+      if (!hand || hand.isStand || hand.isBusted) return;
+
+      const val = calculateHandValue(hand.cards);
+      if (val.total <= 16 || (val.total === 17 && val.isSoft)) {
+        this.handleAction(botId, 'hit');
+      } else {
+        this.handleAction(botId, 'stand');
+      }
+    }, 900);
+    if (typeof (this.botActionTimer as any)?.unref === 'function') {
+      (this.botActionTimer as any).unref();
     }
   }
 
@@ -314,32 +389,67 @@ export class BlackjackEngine {
   }
 
   private startDealerTurn(): void {
-    this.clearTurnTimeout();
+    this.clearTimers();
     this.state.phase = 'dealer_turn';
     this.state.currentTurnPlayerId = null;
     this.state.turnDeadline = null;
+    this.state.actionLog.push('Dealer is revealing hole card...');
+    this.emitState();
 
-    if (this.dealerHoleCard) {
-      this.state.dealerCards = [this.state.dealerCards[0], this.dealerHoleCard];
+    this.dealerTurnTimer = setTimeout(() => {
+      if (this.dealerHoleCard) {
+        this.state.dealerCards = [this.state.dealerCards[0], this.dealerHoleCard];
+      }
+      this.state.dealerScore = calculateHandValue(this.state.dealerCards).total;
+      this.state.actionLog.push(`Dealer reveals ${this.state.dealerCards[1]?.rank}${this.state.dealerCards[1]?.suit} (Total: ${this.state.dealerScore})`);
+      this.emitState();
+
+      const allPlayersBusted = this.state.players
+        .filter((p) => p.hands.length > 0)
+        .every((p) => p.hands.every((h) => h.isBusted));
+
+      if (allPlayersBusted) {
+        this.dealerTurnTimer = setTimeout(() => {
+          this.finishRound();
+        }, 1000);
+        if (typeof (this.dealerTurnTimer as any)?.unref === 'function') {
+          (this.dealerTurnTimer as any).unref();
+        }
+      } else {
+        this.stepDealerHit();
+      }
+    }, 1300);
+
+    if (typeof (this.dealerTurnTimer as any)?.unref === 'function') {
+      (this.dealerTurnTimer as any).unref();
     }
-    this.state.dealerScore = calculateHandValue(this.state.dealerCards).total;
+  }
 
-    const allPlayersBusted = this.state.players
-      .filter((p) => p.hands.length > 0)
-      .every((p) => p.hands.every((h) => h.isBusted));
-
-    if (!allPlayersBusted) {
-      while (shouldDealerHit(this.state.dealerCards)) {
+  private stepDealerHit(): void {
+    if (shouldDealerHit(this.state.dealerCards)) {
+      this.dealerTurnTimer = setTimeout(() => {
         const nextCard = this.drawCard();
         this.state.dealerCards.push(nextCard);
         this.state.dealerScore = calculateHandValue(this.state.dealerCards).total;
+        this.state.actionLog.push(`Dealer draws ${nextCard.rank}${nextCard.suit} (Total: ${this.state.dealerScore})`);
+        this.emitState();
+        this.stepDealerHit();
+      }, 1100);
+      if (typeof (this.dealerTurnTimer as any)?.unref === 'function') {
+        (this.dealerTurnTimer as any).unref();
+      }
+    } else {
+      this.dealerTurnTimer = setTimeout(() => {
+        this.finishRound();
+      }, 1000);
+      if (typeof (this.dealerTurnTimer as any)?.unref === 'function') {
+        (this.dealerTurnTimer as any).unref();
       }
     }
-
-    this.finishRound();
   }
 
   private finishRound(): void {
+    this.clearTimers();
     this.state.phase = 'payout';
     const dealerCards = this.state.dealerCards;
     const dealerVal = calculateHandValue(dealerCards);
@@ -376,5 +486,21 @@ export class BlackjackEngine {
 
     this.state.phase = 'ended';
     this.emitState();
+  }
+
+  public resetForNextHand(): void {
+    this.clearTimers();
+    this.state.phase = 'betting';
+    this.state.dealerCards = [];
+    this.dealerHoleCard = null;
+    this.state.dealerScore = 0;
+    this.state.currentTurnPlayerId = null;
+    this.state.turnDeadline = null;
+    for (const p of this.state.players) {
+      p.hands = [];
+      p.hasPlacedBet = false;
+    }
+    this.state.actionLog.push('New round - choose your wager!');
+    this.autoBetBots();
   }
 }

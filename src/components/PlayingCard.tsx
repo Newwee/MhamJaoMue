@@ -8,6 +8,7 @@ interface PlayingCardProps {
   highlight?: boolean;
   isPeeling?: boolean;
   animateDeal?: boolean;
+  dealerSqueeze?: boolean;
 }
 
 const SUIT_SYMBOLS: Record<Suit, { icon: string; color: string; isRed: boolean }> = {
@@ -24,6 +25,7 @@ export const PlayingCard: React.FC<PlayingCardProps> = ({
   highlight = false,
   isPeeling = false,
   animateDeal = false,
+  dealerSqueeze = false,
 }) => {
   const sizeClasses = {
     sm: 'w-10 h-14 text-xs rounded',
@@ -31,8 +33,10 @@ export const PlayingCard: React.FC<PlayingCardProps> = ({
     lg: 'w-20 h-28 sm:w-24 sm:h-36 text-lg rounded-lg',
   }[size];
 
-  const animClass = isPeeling
-    ? 'animate-suspense-peel shadow-[0_0_20px_rgba(234,179,8,0.8)]'
+  const animClass = dealerSqueeze
+    ? 'animate-dealer-squeeze'
+    : isPeeling
+    ? 'animate-suspense-peel shadow-[0_0_24px_rgba(234,179,8,0.85)]'
     : animateDeal
     ? 'animate-deal-card'
     : '';
@@ -40,11 +44,11 @@ export const PlayingCard: React.FC<PlayingCardProps> = ({
   if (card.hidden) {
     return (
       <div
-        className={`relative select-none flex items-center justify-center border-2 border-amber-600/50 shadow-card bg-gradient-to-br from-red-950 via-red-900 to-zinc-950 overflow-hidden transform transition-all duration-300 hover:-translate-y-1 ${sizeClasses} ${animClass} ${className}`}
+        className={`relative select-none flex items-center justify-center border-2 border-amber-600/60 shadow-card bg-gradient-to-br from-red-950 via-zinc-950 to-red-950 overflow-hidden transform transition-all duration-300 ${sizeClasses} ${animClass} ${className}`}
       >
         <div className="absolute inset-1 border border-amber-500/40 rounded flex items-center justify-center bg-[radial-gradient(#eab308_1.5px,transparent_1.5px)] [background-size:6px_6px]">
-          <div className="w-6 h-6 rounded-full border-2 border-amber-400/60 flex items-center justify-center bg-red-950/90 shadow-md">
-            <span className="text-[11px] font-serif font-black text-amber-400 drop-shadow">R</span>
+          <div className="w-7 h-7 rounded-full border-2 border-amber-400/80 flex items-center justify-center bg-black/90 shadow-[0_0_10px_rgba(234,179,8,0.5)]">
+            <span className="text-[11px] font-serif font-black text-amber-300 drop-shadow">888</span>
           </div>
         </div>
       </div>

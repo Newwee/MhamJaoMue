@@ -467,7 +467,13 @@ export class PokerEngine {
     }
 
     if (!canAnyPlayerAct) {
-      this.advancePhase();
+      if (this.nextHandTimer) clearTimeout(this.nextHandTimer);
+      this.nextHandTimer = setTimeout(() => {
+        this.advancePhase();
+      }, 1200);
+      if (typeof (this.nextHandTimer as any)?.unref === 'function') {
+        (this.nextHandTimer as any).unref();
+      }
       return;
     }
 

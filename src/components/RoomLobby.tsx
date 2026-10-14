@@ -103,7 +103,7 @@ export const RoomLobby: React.FC<RoomLobbyProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
-            {isHost && gameType === 'poker' && players.length < maxPlayers && (
+            {isHost && players.length < maxPlayers && (
               <button
                 onClick={onAddBot}
                 className="flex items-center gap-1 px-3.5 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-xs font-bold text-zinc-200 transition-colors"

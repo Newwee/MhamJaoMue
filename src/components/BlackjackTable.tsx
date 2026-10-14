@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   BlackjackGameState,
   BlackjackActionType,
@@ -7,7 +7,7 @@ import { PlayingCard } from './PlayingCard';
 import { ChipStack } from './ChipStack';
 import { calculateHandValue, canDoubleHand, canSplitHand } from '../../server/blackjack/blackjackLogic';
 import { sounds } from '../audio/soundEffects';
-import { ArrowLeft, Play, Plus, RefreshCw, Trophy } from 'lucide-react';
+import { ArrowLeft, Play, Plus, RefreshCw, Trophy, History } from 'lucide-react';
 
 interface BlackjackTableProps {
   state: BlackjackGameState;
@@ -16,6 +16,8 @@ interface BlackjackTableProps {
   onPlaceBet: (amount: number) => void;
   onNextHand: () => void;
   onLeave: () => void;
+  onAddBot?: () => void;
+  isHost?: boolean;
 }
 
 export const BlackjackTable: React.FC<BlackjackTableProps> = ({
@@ -25,6 +27,8 @@ export const BlackjackTable: React.FC<BlackjackTableProps> = ({
   onPlaceBet,
   onNextHand,
   onLeave,
+  onAddBot,
+  isHost = false,
 }) => {
   const localPlayer = state.players.find((p) => p.id === localPlayerId);
   const isMyTurn = state.currentTurnPlayerId === localPlayerId;
@@ -34,6 +38,15 @@ export const BlackjackTable: React.FC<BlackjackTableProps> = ({
       : null;
 
   const [selectedChipBet, setSelectedChipBet] = useState<number>(100);
+  const [showLog, setShowLog] = useState<boolean>(false);
+
+  const prevPhaseRef = useRef(state.phase);
+  useEffect(() => {
+    if (state.phase === 'dealer_turn' && prevPhaseRef.current !== 'dealer_turn') {
+      sounds.playCardPeelSound();
+    }
+    prevPhaseRef.current = state.phase;
+  }, [state.phase]);
 
   const chipOptions = [25, 50, 100, 250, 500, 1000];
 
@@ -75,8 +88,24 @@ export const BlackjackTable: React.FC<BlackjackTableProps> = ({
           <span>Lobby</span>
         </button>
 
-        <div className="text-xs font-mono text-zinc-400">
-          Min Bet: ${state.minBet} • Max Bet: ${state.maxBet}
+        <div className="flex items-center gap-2">
+          {isHost && onAddBot && (
+            <button
+              onClick={onAddBot}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-950/70 border border-emerald-700/60 text-xs font-bold text-emerald-300 hover:bg-emerald-900 transition-colors"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Add Bot</span>
+            </button>
+          )}
+
+          <button
+            onClick={() => setShowLog(!showLog)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-xs text-zinc-300 hover:text-white hover:bg-zinc-800 transition-colors"
+          >
+            <History className="w-4 h-4 text-amber-400" />
+            <span>Action Log</span>
+          </button>
         </div>
       </div>
 
@@ -108,8 +137,9 @@ export const BlackjackTable: React.FC<BlackjackTableProps> = ({
                       <PlayingCard
                         card={card}
                         size="md"
-                        isPeeling={Boolean(card.hidden && state.phase === 'player_turns')}
-                        animateDeal={true}
+                        isPeeling={Boolean(card.hidden && (state.phase === 'player_turns' || state.phase === 'dealer_turn'))}
+                        dealerSqueeze={idx === 1 && !card.hidden && (state.phase === 'dealer_turn' || state.phase === 'payout' || state.phase === 'ended')}
+                        animateDeal={idx !== 1}
                       />
                     </div>
                   ))
@@ -308,6 +338,30 @@ export const BlackjackTable: React.FC<BlackjackTableProps> = ({
           </div>
         )}
       </div>
+
+      {showLog && (
+        <div className="fixed inset-y-0 right-0 w-80 bg-zinc-950/95 border-l border-zinc-800 p-4 z-50 flex flex-col shadow-2xl backdrop-blur-md animate-in slide-in-from-right">
+          <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
+            <h3 className="font-serif font-bold text-amber-400 text-sm flex items-center gap-2">
+              <History className="w-4 h-4" />
+              <span>Dealer & Action Log</span>
+            </h3>
+            <button
+              onClick={() => setShowLog(false)}
+              className="text-zinc-400 hover:text-white text-xs px-2 py-1"
+            >
+              ✕
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto py-3 space-y-1.5 font-mono text-[11px] text-zinc-300">
+            {state.actionLog.map((log, idx) => (
+              <div key={idx} className="p-1.5 rounded bg-zinc-900/60 border border-zinc-800/60">
+                {log}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

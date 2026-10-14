@@ -85,6 +85,33 @@ class SoundManager {
     noise.start(now);
   }
 
+  public playCardPeelSound(): void {
+    if (!this.soundEnabled) return;
+    const ctx = this.initContext();
+    if (!ctx) return;
+
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(140, now);
+    osc.frequency.exponentialRampToValueAtTime(340, now + 0.5);
+
+    gain.gain.setValueAtTime(0.08, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start(now);
+    osc.stop(now + 0.5);
+
+    setTimeout(() => {
+      this.playCardDealSound();
+    }, 450);
+  }
+
   public playFoldSound(): void {
     if (!this.soundEnabled) return;
     const ctx = this.initContext();
