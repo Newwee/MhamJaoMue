@@ -173,8 +173,10 @@ export const PokerTable: React.FC<PokerTableProps> = ({
             <div className="absolute inset-8 sm:inset-10 rounded-[120px] sm:rounded-[175px] border border-gold/20 pointer-events-none"></div>
 
             <div className="absolute top-1/4 sm:top-1/3 flex flex-col items-center pointer-events-none z-10">
-              <div className="text-[10px] sm:text-xs font-serif font-black tracking-widest text-gold/40 uppercase">
-                Texas Hold’em
+              <div className="flex items-center gap-1.5 text-[10px] sm:text-xs font-serif font-black tracking-widest text-gold/50 uppercase drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+                <span>EMHAM888 KING</span>
+                <span>•</span>
+                <span>TEXAS HOLD’EM</span>
               </div>
               <div className="flex items-center gap-2 mt-1 bg-black/60 backdrop-blur-md px-4 py-1.5 rounded-full border border-gold/40 shadow-lg">
                 <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase">Pot</span>

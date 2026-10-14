@@ -94,7 +94,7 @@ export const UwinSidebar: React.FC<UwinSidebarProps> = ({
         <div className="p-3 rounded-xl bg-gradient-to-br from-purple-900/60 via-indigo-950 to-navy-900 border border-purple-500/40 text-center space-y-1.5 shadow-inner">
           <div className="font-serif font-black text-amber-300 text-xs flex items-center justify-center gap-1">
             <Zap className="w-3.5 h-3.5 fill-amber-300" />
-            <span>USPIN 33</span>
+            <span>EMHAM888 SPIN</span>
           </div>
           <p className="text-[10px] text-zinc-300">หมุนวงล้อลุ้นรับโชคใหญ่!</p>
           <button

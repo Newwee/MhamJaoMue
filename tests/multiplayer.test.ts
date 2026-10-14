@@ -102,5 +102,6 @@ test('Multiplayer Integration - Two Sessions Room Lifecycle, Hidden Card Privacy
 
   clientA.disconnect();
   clientB.disconnect();
+  io.close();
   await new Promise<void>((resolve) => server.close(() => resolve()));
 });

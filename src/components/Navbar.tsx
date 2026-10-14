@@ -49,10 +49,10 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
           <div>
             <h1 className="font-serif font-black tracking-wider text-base sm:text-lg text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-400 to-yellow-200 uppercase">
-              Royal Club
+              EMHAM888KING
             </h1>
             <p className="text-[10px] text-zinc-400 tracking-widest font-mono uppercase">
-              Poker & Blackjack
+              Supreme Gaming Arena
             </p>
           </div>
         </button>

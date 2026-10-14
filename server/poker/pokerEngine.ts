@@ -194,6 +194,9 @@ export class PokerEngine {
       this.turnTimeoutTimer = setTimeout(() => {
         this.handleTimeout();
       }, this.turnDurationMs);
+      if (typeof (this.turnTimeoutTimer as any)?.unref === 'function') {
+        (this.turnTimeoutTimer as any).unref();
+      }
     } else {
       this.state.turnDeadline = null;
     }

@@ -83,6 +83,9 @@ export const BlackjackTable: React.FC<BlackjackTableProps> = ({
       <div className="relative flex-1 w-full max-w-5xl mx-auto flex items-center justify-center my-auto min-h-[500px]">
         <div className="relative w-full h-[480px] sm:h-[540px] rounded-b-[240px] sm:rounded-b-[300px] bg-gradient-to-b from-rail-light via-rail-dark to-black p-4 sm:p-6 shadow-2xl border-4 border-rail-border flex flex-col items-center">
           <div className="relative w-full h-full rounded-b-[210px] sm:rounded-b-[270px] bg-gradient-to-b from-felt-light via-felt to-felt-darkest shadow-table-inner border-2 border-felt-bright/30 flex flex-col items-center justify-between p-4 sm:p-6 overflow-hidden">
+            <div className="absolute top-20 sm:top-24 text-[9px] sm:text-[11px] font-serif font-black tracking-[0.25em] text-gold/45 uppercase pointer-events-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+              EMHAM888 KING VIP SALON
+            </div>
             <div className="absolute top-28 sm:top-36 inset-x-8 h-44 rounded-full border border-red-500/30 pointer-events-none flex items-start justify-center pt-2">
               <span className="text-[10px] sm:text-xs font-serif font-black tracking-widest text-red-500/70 uppercase text-center px-4">
                 BLACKJACK PAYS 3 TO 2 • DEALER MUST STAND ON 17 AND MUST DRAW TO 16

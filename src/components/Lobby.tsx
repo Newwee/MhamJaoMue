@@ -70,13 +70,13 @@ export const Lobby: React.FC<LobbyProps> = ({
 
         <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="space-y-3 text-center md:text-left">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400 text-zinc-950 text-xs font-serif font-black tracking-wider uppercase shadow-md">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gradient-to-r from-amber-400 to-yellow-400 text-zinc-950 text-xs font-serif font-black tracking-wider uppercase shadow-md">
               <Crown className="w-3.5 h-3.5 fill-black" />
-              <span>UWIN33 ROYAL ARENA</span>
+              <span>EMHAM888KING SUPREME ARENA</span>
             </div>
 
             <h2 className="text-2xl sm:text-4xl lg:text-5xl font-serif font-black tracking-tight text-white leading-tight">
-              เปิดตัวแล้ว <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500">UCoins & Cards</span>
+              เปิดตัวแล้ว <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500">EMHAM888 Coins & Cards</span>
             </h2>
             <p className="text-xs sm:text-sm text-zinc-300 max-w-xl font-sans leading-relaxed">
               ทำให้ทุกการเล่นมีความหมายด้วย Texas Hold’em และ Blackjack ออนไลน์ เล่นคนเดียวกับ AI หรือสร้างห้องเล่นกับเพื่อนผ่านอินเทอร์เน็ตได้ทันที!
@@ -421,7 +421,7 @@ export const Lobby: React.FC<LobbyProps> = ({
               ✕
             </button>
             <div className="font-bold text-amber-400 flex items-center gap-1 mb-1">
-              <span>👑 ผู้ช่วยส่วนตัว UWIN</span>
+              <span>👑 ผู้ช่วยส่วนตัว EMHAM888</span>
             </div>
             <p className="text-[11px] leading-relaxed text-zinc-300">
               กดปุ่ม <span className="text-amber-300 font-bold">+ ชิปฟรี</span> ด้านบนเพื่อรับ $5,000 เติมได้ตลอดเวลา!
@@ -432,8 +432,8 @@ export const Lobby: React.FC<LobbyProps> = ({
             className="w-12 h-12 rounded-full bg-gradient-to-tr from-amber-400 to-yellow-300 p-0.5 shadow-xl cursor-pointer hover:scale-105 active:scale-95 transition-transform"
             title="กดรับชิปฟรี"
           >
-            <div className="w-full h-full rounded-full bg-navy-950 flex items-center justify-center font-bold text-amber-300 text-xs">
-              UWIN
+            <div className="w-full h-full rounded-full bg-navy-950 flex items-center justify-center font-bold text-amber-300 text-[10px] tracking-tighter">
+              KING
             </div>
           </div>
         </div>

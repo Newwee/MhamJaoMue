@@ -186,6 +186,9 @@ export class BlackjackEngine {
           this.turnTimeoutTimer = setTimeout(() => {
             this.handleAction(p.id, 'stand');
           }, this.turnDurationMs);
+          if (typeof (this.turnTimeoutTimer as any)?.unref === 'function') {
+            (this.turnTimeoutTimer as any).unref();
+          }
           this.emitState();
           return;
         }

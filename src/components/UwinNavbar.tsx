@@ -41,7 +41,7 @@ export const UwinNavbar: React.FC<UwinNavbarProps> = ({
       {showNotice && (
         <div className="w-full bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 text-zinc-950 font-sans text-xs font-bold py-1.5 px-4 flex items-center justify-between shadow-sm">
           <div className="flex-1 flex items-center justify-center gap-2">
-            <span>🎁 รับเครดิตฟรี $10,000 ชิป! สนุกกับ Texas Hold’em และ Blackjack ได้ทันที</span>
+            <span>👑 ต้อนรับสู่ EMHAM888KING ราชาแห่งเกมไพ่ออนไลน์ แจกฟรี $10,000 ชิป!</span>
             <button
               onClick={handleClaimFaucet}
               className="underline hover:text-red-700 transition-colors"
@@ -62,19 +62,27 @@ export const UwinNavbar: React.FC<UwinNavbarProps> = ({
         <div className="flex items-center gap-4">
           <button
             onClick={onReturnHome}
-            className="flex items-center gap-2 focus:outline-none group"
+            className="flex items-center gap-2.5 focus:outline-none group"
           >
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 via-yellow-300 to-amber-600 p-0.5 shadow-[0_0_15px_rgba(234,179,8,0.5)] group-hover:scale-105 transition-transform flex items-center justify-center">
+              <div className="w-full h-full bg-navy-950 rounded-[10px] flex items-center justify-center">
+                <Crown className="w-5 h-5 text-amber-400 fill-amber-400" />
+              </div>
+            </div>
             <div className="flex items-center tracking-tighter">
-              <span className="font-serif font-black text-2xl sm:text-3xl text-amber-400 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] tracking-tight">
-                UWIN
+              <span className="font-serif font-black text-xl sm:text-2xl text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-400 to-yellow-300 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] tracking-tight">
+                EMHAM
               </span>
-              <span className="font-serif font-black text-2xl sm:text-3xl text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] tracking-tight ml-0.5">
-                33
+              <span className="font-serif font-black text-xl sm:text-2xl text-red-500 drop-shadow-[0_0_12px_rgba(239,68,68,0.8)] tracking-tight ml-1">
+                888
+              </span>
+              <span className="font-serif font-black text-xl sm:text-2xl text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] tracking-tight ml-1">
+                KING
               </span>
             </div>
             <div className="hidden lg:flex flex-col ml-1 text-left leading-none">
               <span className="text-[10px] font-mono font-bold text-amber-400 uppercase tracking-widest">
-                ROYAL CASINO
+                SUPREME CASINO
               </span>
               <span className="text-[9px] text-zinc-400 tracking-wider">
                 POKER & BLACKJACK
