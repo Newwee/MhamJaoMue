@@ -22,6 +22,13 @@ export default {
           light: '#137a46',
           bright: '#1bb065'
         },
+        'felt-red': {
+          darkest: '#2b0608',
+          dark: '#4f0a0e',
+          DEFAULT: '#781116',
+          light: '#9e181e',
+          bright: '#c7222a'
+        },
         gold: {
           light: '#fde047',
           DEFAULT: '#eab308',
@@ -48,6 +55,15 @@ export default {
           '70%': { transform: 'perspective(1000px) translateY(3px) translateX(0) rotate(1deg) scale(1.03)', opacity: '1' },
           '100%': { transform: 'perspective(1000px) translateY(0) translateX(0) rotate(0deg) scale(1)', opacity: '1' }
         },
+        dealFromShoe: {
+          '0%': { transform: 'translate(140px, -120px) rotate(25deg) scale(0.5)', opacity: '0.3' },
+          '100%': { transform: 'translate(0, 0) rotate(0deg) scale(1)', opacity: '1' }
+        },
+        chipPayoutDrop: {
+          '0%': { transform: 'translateY(-70px) scale(0.6)', opacity: '0' },
+          '70%': { transform: 'translateY(4px) scale(1.08)', opacity: '1' },
+          '100%': { transform: 'translateY(0) scale(1)', opacity: '1' }
+        },
         flip: {
           '0%': { transform: 'perspective(1000px) rotateY(180deg) scale(0.92)', opacity: '0.9' },
           '100%': { transform: 'perspective(1000px) rotateY(0deg) scale(1)', opacity: '1' }
@@ -72,6 +88,8 @@ export default {
       },
       animation: {
         'deal-card': 'deal 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+        'deal-shoe': 'dealFromShoe 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+        'chip-payout': 'chipPayoutDrop 0.55s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
         'flip-card': 'flip 0.6s ease-out forwards',
         'dealer-squeeze': 'dealerSqueeze 1.4s cubic-bezier(0.25, 1, 0.5, 1) forwards',
         'turn-pulse': 'pulseGlow 1.5s infinite',

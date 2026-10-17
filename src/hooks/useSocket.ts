@@ -259,12 +259,12 @@ export function useSocket(profile: StoredProfile, onChipsUpdate: (chips: number)
   );
 
   const sendBlackjackBet = useCallback(
-    (amount: number) => {
+    (amount: number, pairBet = 0) => {
       if (localController.isRunning()) {
-        localController.handleBlackjackBet(amount);
+        localController.handleBlackjackBet(amount, pairBet);
       }
       if (socketRef.current && socketRef.current.connected) {
-        socketRef.current.emit('blackjack_bet', { amount });
+        socketRef.current.emit('blackjack_bet', { amount, pairBet });
       }
     },
     [localController]

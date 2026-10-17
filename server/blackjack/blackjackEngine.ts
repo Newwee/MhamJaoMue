@@ -13,6 +13,7 @@ import {
   canDoubleHand,
   shouldDealerHit,
   calculatePayout,
+  isPairHand,
 } from './blackjackLogic';
 
 export class BlackjackEngine {
@@ -65,6 +66,9 @@ export class BlackjackEngine {
         hands: existing?.hands || [],
         currentHandIndex: existing?.currentHandIndex || 0,
         currentBet: existing?.currentBet || this.state.minBet,
+        pairBet: existing?.pairBet || 0,
+        pairWon: existing?.pairWon,
+        pairPayout: existing?.pairPayout,
         hasPlacedBet: existing?.hasPlacedBet || false,
       };
     });
@@ -131,16 +135,20 @@ export class BlackjackEngine {
     }
   }
 
-  public placeBet(playerId: string, amount: number): boolean {
+  public placeBet(playerId: string, amount: number, pairBet = 0): boolean {
     if (this.state.phase !== 'betting') return false;
     const player = this.state.players.find((p) => p.id === playerId);
     if (!player) return false;
     if (amount < this.state.minBet || amount > this.state.maxBet) return false;
-    if (amount > player.chips) return false;
+    const validPair = Math.max(0, pairBet);
+    if (amount + validPair > player.chips) return false;
 
     player.currentBet = amount;
+    player.pairBet = validPair;
+    player.pairWon = undefined;
+    player.pairPayout = undefined;
     player.hasPlacedBet = true;
-    this.state.actionLog.push(`${player.name} bet $${amount}`);
+    this.state.actionLog.push(`${player.name} bet $${amount}${validPair > 0 ? ` + PAIR $${validPair}` : ''}`);
     this.emitState();
 
     this.autoBetBots();
@@ -162,7 +170,10 @@ export class BlackjackEngine {
 
   public dealRound(): boolean {
     if (this.state.phase !== 'betting') return false;
-    const activePlayers = this.state.players.filter((p) => p.hasPlacedBet && p.currentBet <= p.chips);
+    const activePlayers = this.state.players.filter((p) => {
+      const totalReq = p.currentBet + (p.pairBet || 0);
+      return p.hasPlacedBet && totalReq <= p.chips;
+    });
     if (activePlayers.length === 0) return false;
 
     this.clearTimers();
@@ -173,8 +184,9 @@ export class BlackjackEngine {
     this.state.actionLog = [`--- Blackjack Hand #${this.state.handNumber} ---`];
 
     for (const p of this.state.players) {
-      if (p.hasPlacedBet && p.currentBet <= p.chips) {
-        p.chips -= p.currentBet;
+      const totalReq = p.currentBet + (p.pairBet || 0);
+      if (p.hasPlacedBet && totalReq <= p.chips) {
+        p.chips -= totalReq;
         p.hands = [
           {
             cards: [],
@@ -211,11 +223,48 @@ export class BlackjackEngine {
 
     for (const p of activePlayers) {
       const hand = p.hands[0];
+      if (p.pairBet && p.pairBet > 0) {
+        if (isPairHand(hand.cards)) {
+          const profit = p.pairBet * 11;
+          const payout = p.pairBet + profit;
+          p.chips += payout;
+          p.pairWon = true;
+          p.pairPayout = payout;
+          this.state.actionLog.push(`${p.name} hits PAIR side bet with ${hand.cards[0].rank}-${hand.cards[1].rank}! +$${profit} (11:1)`);
+        } else {
+          p.pairWon = false;
+          p.pairPayout = 0;
+        }
+      }
+
       if (isNaturalBlackjack(hand.cards)) {
         hand.isBlackjack = true;
         hand.isStand = true;
         this.state.actionLog.push(`${p.name} has Blackjack!`);
       }
+    }
+
+    const upcard = this.state.dealerCards[0];
+    const canHaveBJ = upcard.rank === 'A' || ['10', 'J', 'Q', 'K'].includes(upcard.rank);
+    const dealerBJ = this.dealerHoleCard && isNaturalBlackjack([upcard, this.dealerHoleCard]);
+
+    if (canHaveBJ) {
+      this.state.dealerPeeking = true;
+      this.emitState();
+      if (this.dealerTurnTimer) clearTimeout(this.dealerTurnTimer);
+      this.dealerTurnTimer = setTimeout(() => {
+        this.state.dealerPeeking = false;
+        if (dealerBJ) {
+          this.startDealerTurn();
+        } else {
+          this.state.phase = 'player_turns';
+          this.findNextTurn(0, 0);
+        }
+      }, 800);
+      if (typeof (this.dealerTurnTimer as any)?.unref === 'function') {
+        (this.dealerTurnTimer as any).unref();
+      }
+      return true;
     }
 
     this.state.phase = 'player_turns';
@@ -499,6 +548,8 @@ export class BlackjackEngine {
     for (const p of this.state.players) {
       p.hands = [];
       p.hasPlacedBet = false;
+      p.pairWon = undefined;
+      p.pairPayout = undefined;
     }
     this.state.actionLog.push('New round - choose your wager!');
     this.autoBetBots();

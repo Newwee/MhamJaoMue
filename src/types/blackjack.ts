@@ -25,6 +25,9 @@ export interface BlackjackPlayer extends BasePlayer {
   hands: BlackjackHand[];
   currentHandIndex: number;
   currentBet: number;
+  pairBet?: number;
+  pairWon?: boolean;
+  pairPayout?: number;
   hasPlacedBet: boolean;
   seatIndex: number;
 }
@@ -33,6 +36,7 @@ export interface BlackjackGameState {
   phase: BlackjackPhase;
   dealerCards: Card[];
   dealerScore: number;
+  dealerPeeking?: boolean;
   players: BlackjackPlayer[];
   currentTurnPlayerId: string | null;
   currentTurnHandIndex: number;

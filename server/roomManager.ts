@@ -340,13 +340,13 @@ export class RoomManager {
     return room.blackjackEngine.handleAction(mapping.playerId, action);
   }
 
-  public handleBlackjackBet(socketId: string, amount: number): boolean {
+  public handleBlackjackBet(socketId: string, amount: number, pairBet = 0): boolean {
     const mapping = this.socketToRoom.get(socketId);
     if (!mapping) return false;
     const room = this.rooms.get(mapping.roomId);
     if (!room || !room.blackjackEngine) return false;
 
-    return room.blackjackEngine.placeBet(mapping.playerId, amount);
+    return room.blackjackEngine.placeBet(mapping.playerId, amount, pairBet);
   }
 
   public startNextHand(socketId: string): boolean {
@@ -362,11 +362,14 @@ export class RoomManager {
       for (const p of room.blackjackEngine.state.players) {
         p.hands = [];
         p.hasPlacedBet = false;
+        p.pairWon = undefined;
+        p.pairPayout = undefined;
       }
       room.blackjackEngine.state.dealerCards = [];
       if (room.isSinglePlayer) {
         const lastBet = room.blackjackEngine.state.players[0]?.currentBet || 100;
-        room.blackjackEngine.placeBet(room.players[0].id, lastBet);
+        const lastPair = room.blackjackEngine.state.players[0]?.pairBet || 0;
+        room.blackjackEngine.placeBet(room.players[0].id, lastBet, lastPair);
       } else {
         this.broadcastBlackjackState(room, room.blackjackEngine.getState());
       }

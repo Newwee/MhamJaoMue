@@ -351,7 +351,7 @@ export class LocalGameController {
 
       case 'blackjack_bet': {
         if (this.blackjackEngine) {
-          this.blackjackEngine.placeBet(msg.playerId, msg.amount);
+          this.blackjackEngine.placeBet(msg.playerId, msg.amount, msg.pairBet || 0);
         }
         break;
       }
@@ -590,16 +590,17 @@ export class LocalGameController {
     }
   }
 
-  public handleBlackjackBet(amount: number): void {
+  public handleBlackjackBet(amount: number, pairBet = 0): void {
     if (this.isP2PHost || this.roomState?.isSinglePlayer) {
       if (this.blackjackEngine) {
-        this.blackjackEngine.placeBet(this.myPlayerId, amount);
+        this.blackjackEngine.placeBet(this.myPlayerId, amount, pairBet);
       }
     } else if (this.hostConnection) {
       this.hostConnection.send({
         type: 'blackjack_bet',
         playerId: this.myPlayerId,
         amount,
+        pairBet,
       });
     }
   }

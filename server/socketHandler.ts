@@ -123,8 +123,8 @@ export function setupSocketHandlers(io: Server, roomManager: RoomManager): void 
       roomManager.handleBlackjackAction(socket.id, payload.action);
     });
 
-    socket.on('blackjack_bet', (payload: { amount: number }) => {
-      roomManager.handleBlackjackBet(socket.id, payload.amount);
+    socket.on('blackjack_bet', (payload: { amount: number; pairBet?: number }) => {
+      roomManager.handleBlackjackBet(socket.id, payload.amount, payload.pairBet || 0);
     });
 
     socket.on('start_next_hand', () => {

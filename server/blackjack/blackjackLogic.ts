@@ -119,3 +119,9 @@ export function calculatePayout(
 
   return { result: 'lose', payoutAmount: 0 };
 }
+
+export function isPairHand(cards: Card[]): boolean {
+  if (cards.length < 2) return false;
+  return cards[0].rank === cards[1].rank;
+}
+

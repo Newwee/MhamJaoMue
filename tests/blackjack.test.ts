@@ -6,7 +6,8 @@ import {
   canSplitHand,
   canDoubleHand,
   shouldDealerHit,
-  calculatePayout
+  calculatePayout,
+  isPairHand
 } from '../server/blackjack/blackjackLogic';
 import { Card } from '../src/types/common';
 import { BlackjackHand } from '../src/types/blackjack';
@@ -158,3 +159,24 @@ test('Blackjack - Payouts: Natural, Win, Push, Dealer Bust', () => {
   assert.strictEqual(pushResult.result, 'push');
   assert.strictEqual(pushResult.payoutAmount, 100);
 });
+
+test('Blackjack - Pair Side Bet Detection', () => {
+  const pairCards: Card[] = [
+    { suit: 'hearts', rank: '7' },
+    { suit: 'spades', rank: '7' }
+  ];
+  assert.strictEqual(isPairHand(pairCards), true);
+
+  const nonPairCards: Card[] = [
+    { suit: 'hearts', rank: '7' },
+    { suit: 'diamonds', rank: '8' }
+  ];
+  assert.strictEqual(isPairHand(nonPairCards), false);
+
+  const facePair: Card[] = [
+    { suit: 'clubs', rank: 'K' },
+    { suit: 'spades', rank: 'K' }
+  ];
+  assert.strictEqual(isPairHand(facePair), true);
+});
+
